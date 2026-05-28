@@ -23,16 +23,18 @@ $keyPath = "$relDir\key.pem"
 $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 $extId = (Get-Content "$relDir\extension_id.txt" -Raw).Trim()
 
-Write-Host "=== JIGU AdBlock Release v$Version ==="
+Write-Host "=== JIGU MODE Release v$Version ==="
 Write-Host ""
 
-# 1) manifest.json 버전 갱신
+# 1) manifest.json 버전 갱신 (한글 안 깨지게 raw text 치환)
 Write-Host "[1] Updating manifest.json version..."
 $manifestPath = "$srcDir\manifest.json"
-$manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-$oldVer = $manifest.version
-$manifest.version = $Version
-$manifest | ConvertTo-Json -Depth 10 | Set-Content $manifestPath -Encoding UTF8
+$raw = Get-Content $manifestPath -Raw -Encoding UTF8
+$oldMatch = [regex]::Match($raw, '"version"\s*:\s*"([^"]+)"')
+$oldVer = $oldMatch.Groups[1].Value
+$newRaw = [regex]::Replace($raw, '"version"\s*:\s*"[^"]+"', "`"version`": `"$Version`"", 1)
+# UTF-8 BOM 없이 저장
+[System.IO.File]::WriteAllText($manifestPath, $newRaw, (New-Object System.Text.UTF8Encoding($false)))
 Write-Host "    $oldVer -> $Version"
 
 # 2) Chrome 으로 패킹
